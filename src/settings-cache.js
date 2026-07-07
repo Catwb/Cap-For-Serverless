@@ -7,9 +7,11 @@ const _corsCache = new Map();
 const CORS_CACHE_TTL = 60_000;
 
 let _storage = null;
+let _cfg = null;
 
-export function initSettingsCache(storage) {
+export function initSettingsCache(storage, cfg) {
   _storage = storage;
+  _cfg = cfg;
 }
 
 export async function loadHeaders() {
@@ -51,7 +53,7 @@ export function setRatelimit(settings) {
 }
 
 function corsDefaultFromEnv() {
-  const env = process.env.CORS_ORIGIN;
+  const env = _cfg?.CORS_ORIGIN;
   if (!env || env.trim() === "*") return { origins: null };
   const origins = env.split(",").map(o => o.trim()).filter(o => o && o !== "*");
   return { origins: origins.length ? origins : null };

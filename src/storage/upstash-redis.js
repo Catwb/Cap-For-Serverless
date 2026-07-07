@@ -10,10 +10,11 @@ const KEY_FIRST = new Set([
 export class UpstashRedisAdapter extends StorageAdapter {
   constructor(opts = {}) {
     super();
-    const url = opts.url || process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-    const token = opts.token || process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+    const cfg = opts.cfg || {};
+    const url = opts.url || cfg.UPSTASH_REDIS_REST_URL || cfg.KV_REST_API_URL;
+    const token = opts.token || cfg.UPSTASH_REDIS_REST_TOKEN || cfg.KV_REST_API_TOKEN;
     if (!url) throw new Error("Upstash Redis URL required (UPSTASH_REDIS_REST_URL)");
-    this.prefix = opts.prefix || process.env.REDIS_PREFIX || "";
+    this.prefix = opts.prefix || cfg.REDIS_PREFIX || "";
     this.client = new Redis({ url, token });
   }
 

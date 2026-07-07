@@ -24,9 +24,10 @@ CREATE INDEX IF NOT EXISTS idx_cap_hash_expires ON cap_hash(expires_at);
 `;
 
 export class NeonPGAdapter extends StorageAdapter {
-  constructor(connectionString) {
+  constructor(opts = {}) {
     super();
-    const url = connectionString || process.env.DATABASE_URL;
+    const cfg = opts.cfg || {};
+    const url = opts.url || cfg.DATABASE_URL;
     if (!url) throw new Error("Neon Postgres connection string required (DATABASE_URL)");
     this.pool = new Pool({ connectionString: url });
     this._initialized = false;

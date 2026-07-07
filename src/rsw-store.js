@@ -5,7 +5,7 @@ import {
 } from "capjs-core";
 
 const RSW_REDIS_KEY = "settings:rsw_keypair";
-const DEFAULT_BITS = Number(process.env.RSW_BITS) || 2048;
+let DEFAULT_BITS = 2048;
 
 let _keypair = null;
 let _version = null;
@@ -14,8 +14,9 @@ let _created = null;
 let _generating = null;
 let _storage = null;
 
-export function initRswStore(storage) {
+export function initRswStore(storage, cfg) {
   _storage = storage;
+  if (cfg) DEFAULT_BITS = Number(cfg.RSW_BITS) || DEFAULT_BITS;
 }
 
 function clearMemory() {

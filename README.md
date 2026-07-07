@@ -2,10 +2,10 @@
 
 服务端部署包。支持两个平台，在站点面板上操作即可。
 
-| 平台 | 推荐存储 | 免费额度 |
-|------|---------|---------|
-| **Vercel** | Neon Postgres（原生集成）或 Upstash Redis | 0.5 GB / 100h mo |
-| **Cloudflare Workers** | Upstash Redis | 10 万请求/天 |
+| 平台 | 部署方式 | 推荐存储 | 免费额度 |
+|------|---------|---------|---------|
+| **Vercel** | Serverless Function | Neon Postgres 或 Upstash Redis | 0.5 GB / 100h mo |
+| **Cloudflare Pages** | Pages + Functions | Upstash Redis | 10 万请求/天 |
 
 > Vercel KV 已停服，不再可用。
 
@@ -65,7 +65,9 @@ https://你的项目.vercel.app/health
 
 ---
 
-## Cloudflare Workers 部署
+## Cloudflare Pages 部署
+
+> Pages 自动托管管理面板静态文件（index.html、dashboard.js），API 路由由 `functions/[[path]].js` 处理，和 Vercel 一样一个入口搞定。
 
 ### 1. 推送代码
 
@@ -79,21 +81,18 @@ git add cloud/ && git commit -m "add cloud" && git push
 
 ### 3. 导入仓库
 
-打开 [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **Create** → **Workers** → **Import repository**：
+打开 [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**：
 
 | 设置 | 值 |
 |------|-----|
 | 仓库 | 选择你的 GitHub 仓库 |
 | **Root Directory** | `cloud/` |
 | Build command | `npm install` |
-| Deploy command | `npx wrangler deploy` |
-
-> Worker 名称必须和 `cloud/wrangler.toml` 里的 `name` 一致（默认 `cap-cloud`）。
-> 如果面板创建时用了不同名字，要么把面板的名字改成 `cap-cloud`，要么删掉重建。
+| Build output | `public` |
 
 ### 4. 添加环境变量
 
-在 **Settings → Variables** 添加：
+部署后，在 Pages 项目 → **Settings → Environment variables** 添加：
 
 | 变量 | 类型 | 值 |
 |------|------|----|
@@ -101,7 +100,7 @@ git add cloud/ && git commit -m "add cloud" && git push
 | `UPSTASH_REDIS_REST_URL` | Secret | Upstash Redis REST URL |
 | `UPSTASH_REDIS_REST_TOKEN` | Secret | Upstash Redis REST Token |
 
-> Workers 不支持 Neon Postgres（TCP 连接），只能用 Upstash Redis。
+> Pages 不支持 Neon Postgres（TCP 连接），只能用 Upstash Redis。
 
 可选变量（Plain text）：
 
@@ -113,14 +112,20 @@ git add cloud/ && git commit -m "add cloud" && git push
 | `WIDGET_VERSION` | `latest` |
 | `WASM_VERSION` | `latest` |
 
-### 5. 部署
+### 5. 开启 nodejs_compat
 
-点击 **Save and Deploy**。之后每次 `git push` 到对应分支会自动构建部署。
+在 Pages 项目 → **Settings → Functions → Compatibility flags**，添加 `nodejs_compat`。
+
+> ⚠️ 不配这个标志会报 `Error 1101`，因为 `atob`、`crypto.subtle` 等 API 需要它。
+
+### 6. 部署
+
+回到 **Deployments** 标签，点 **Retry deployment** 或重新推送代码。之后每次 `git push` 自动构建部署。
 
 验证：
 
 ```
-https://你的worker名.你的子域.workers.dev/health
+https://你的项目名.pages.dev/health
 → {"ok":true,"version":"3.1.5"}
 ```
 
@@ -146,21 +151,20 @@ curl -X POST https://你的域名/auth/login \
 ## 架构
 
 ```
-请求 → Vercel Serverless / Cloudflare Worker
-             │
-      ┌──────┴──────┐
-      │  Hono Router │
-      │  app.js      │
-      ├──────────────┤
-      │  /health     │  公开
-      │  /auth/*     │  公开
-      │  /:sk/*      │  公开（验证接口）
-      │  /server/*   │  需认证
-      │  /assets/*   │  公开
-      └──────┬───────┘
-             │
-    ┌────────┴────────┐
-    │  Upstash Redis  │
-    │  (或 Neon PG)   │
-    └─────────────────┘
+Vercel:                           Cloudflare Pages:
+请求 → Serverless Function        请求 → Pages CDN → 静态文件命中 → 直接返回
+       │                                     └→ 未命中 → functions/[[path]].js
+       │  Hono Router                               │  Hono Router
+       ├──────────────                              ├──────────────
+       │  /health     │  公开                        │  /health     │  公开
+       │  /auth/*     │  公开                        │  /auth/*     │  公开
+       │  /:sk/*      │  公开（验证接口）             │  /:sk/*      │  公开
+       │  /server/*   │  需认证                      │  /server/*   │  需认证
+       │  /assets/*   │  公开                        │  /assets/*   │  公开
+       └──────┬───────                              └──────┬───────
+              │                                             │
+    ┌────────┴────────┐                           ┌────────┴────────┐
+    │  Upstash Redis  │                           │  Upstash Redis  │
+    │  (或 Neon PG)   │                           │  (只 Redis)     │
+    └─────────────────┘                           └─────────────────┘
 ```

@@ -21,7 +21,7 @@ export async function createApp(env) {
   if (useMemory) {
     storage = new MemoryAdapter();
   } else if (cfg.DATABASE_URL) {
-    storage = new NeonPGAdapter();
+    storage = new NeonPGAdapter({ cfg });
     try {
       const ok = await storage.ping();
       if (!ok) throw new Error("Neon PG ping failed");
@@ -30,8 +30,8 @@ export async function createApp(env) {
       storage = new MemoryAdapter();
     }
   } else {
-    storage = new UpstashRedisAdapter();
     try {
+      storage = new UpstashRedisAdapter({ cfg });
       const ok = await storage.ping();
       if (!ok) throw new Error("Upstash Redis ping failed");
     } catch (e) {
@@ -40,12 +40,12 @@ export async function createApp(env) {
     }
   }
 
-  initSettingsCache(storage);
-  initRswStore(storage);
+  initSettingsCache(storage, cfg);
+  initRswStore(storage, cfg);
   initAuth(storage, cfg);
   initCap(storage);
   initSiteverify(storage);
-  initAssets(storage);
+  initAssets(storage, cfg);
   initServer(storage, cfg, platform);
   initIpdbLib(storage, cfg);
 
