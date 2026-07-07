@@ -77,36 +77,23 @@ git add cloud/ && git commit -m "add cloud" && git push
 
 打开 [console.upstash.com](https://console.upstash.com) → **Create Database**，区域选 **Global**，拿到 REST URL 和 REST Token。
 
-### 3. 在 Cloudflare Dashboard 创建 Worker
+### 3. 导入仓库
 
-- 打开 [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages**
-- 点击 **Create** → **Worker** → 随便起个名字 → **Deploy**
-- 回到 Worker 详情页 → **Manage** → 在 **Git Integration** 中连接你的仓库
-  - 构建命令：`npm install`
-  - 部署命令：留空（直接部署 `workers.js`）
+打开 [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **Create** → **Workers** → **Import repository**：
 
-或者手动部署：
+| 设置 | 值 |
+|------|-----|
+| 仓库 | 选择你的 GitHub 仓库 |
+| **Root Directory** | `cloud/` |
+| Build command | `npm install` |
+| Deploy command | `npx wrangler deploy` |
 
-- 在 Worker 详情页 → **Quick Edit**
-- 把本地 `workers.js` + `app.js` + `src/` 下的文件全部粘贴进去
-  
-  > 注意：Hono 和 @upstash/redis 等依赖需要通过 **Settings → Modules** 添加为 ES Module，或者用 wrangler 部署。推荐用 wrangler CLI 上传完整项目。
-
-**推荐方式（Dashboard + wrangler CLI 单次部署）：**
-
-```bash
-# 本地登录（只需一次）
-npx wrangler login
-
-# 部署
-npx wrangler deploy
-```
-
-之后每次推送到 GitHub，在 Dashboard 的 **Workers → 你的 Worker → Manage → Git Integration** 中连接仓库，开启自动部署。
+> Worker 名称必须和 `cloud/wrangler.toml` 里的 `name` 一致（默认 `cap-cloud`）。
+> 如果面板创建时用了不同名字，要么把面板的名字改成 `cap-cloud`，要么删掉重建。
 
 ### 4. 添加环境变量
 
-在 Worker 详情页 → **Settings → Variables** 添加：
+在 **Settings → Variables** 添加：
 
 | 变量 | 类型 | 值 |
 |------|------|----|
@@ -114,7 +101,7 @@ npx wrangler deploy
 | `UPSTASH_REDIS_REST_URL` | Secret | Upstash Redis REST URL |
 | `UPSTASH_REDIS_REST_TOKEN` | Secret | Upstash Redis REST Token |
 
-> Workers 不支持 Neon Postgres（TCP），只能用 Upstash Redis。
+> Workers 不支持 Neon Postgres（TCP 连接），只能用 Upstash Redis。
 
 可选变量（Plain text）：
 
@@ -128,7 +115,9 @@ npx wrangler deploy
 
 ### 5. 部署
 
-点击 **Save and Deploy**。验证：
+点击 **Save and Deploy**。之后每次 `git push` 到对应分支会自动构建部署。
+
+验证：
 
 ```
 https://你的worker名.你的子域.workers.dev/health
