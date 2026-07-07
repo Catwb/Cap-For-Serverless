@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "node dev.js",
-    "vercel-build": "echo 'Build complete'"
+    "vercel-build": "echo 'Build complete'",
+    "pages-build": "mkdir -p public && cp -r src app.js public/"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",

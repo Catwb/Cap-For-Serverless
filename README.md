@@ -87,7 +87,7 @@ git add cloud/ && git commit -m "add cloud" && git push
 |------|-----|
 | 仓库 | 选择你的 GitHub 仓库 |
 | **Root Directory** | `cloud/` |
-| Build command | `npm install` |
+| Build command | `npm run pages-build` |
 | Build output | `public` |
 
 ### 4. 添加环境变量
