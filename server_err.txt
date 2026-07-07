@@ -1,0 +1,10 @@
+file:///D:/%E6%96%87%E6%A1%A3/1%E5%B7%A5%E4%BD%9C%E7%AB%99/cap/cloud/src/cap.js:9
+import { lookup as ipLookup, isLoaded as ipLoaded } from "./ipdb.js";
+                             ^^^^^^^^
+SyntaxError: The requested module './ipdb.js' does not provide an export named 'isLoaded'
+    at #asyncInstantiate (node:internal/modules/esm/module_job:327:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:431:5)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.18.0

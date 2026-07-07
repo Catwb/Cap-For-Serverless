@@ -5,6 +5,7 @@ import { demoGetKeys, demoGetKey, demoGetGeoStats, demoGetBlockedIps } from "./d
 import { hashPassword, generateSecretKey, generateJwtSecret, randomHex, randomBase64url } from "./crypto.js";
 import { setHeaders, setRatelimit, setCorsDefault, setFiltering, invalidateCorsCache } from "./settings-cache.js";
 import { ensureRswKeypair, getRswStatus } from "./rsw-store.js";
+import { getStatus as getIpdbStatus, saveSettings as saveIpdbSettings, clearSettings as clearIpdbSettings } from "./ipdb.js";
 
 let _storage = null;
 let _cfg = null;
@@ -337,15 +338,15 @@ export const serverRouter = new Hono()
     catch (e) { return c.json({ error: e.message }, 500); }
   })
 
-  .get("/settings/ipdb", async (c) => {
-    if (!_storage) return c.json({ mode: null, loaded: false });
-    const raw = await _storage.get("settings:ipdb");
-    return c.json(raw ? JSON.parse(raw) : { mode: null, loaded: false });
+  .get("/settings/ipdb", async (c) => c.json(getIpdbStatus()))
+
+  .post("/settings/ipdb/download", async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    await saveIpdbSettings(body);
+    return c.json({ success: true, mode: "ipinfo", loaded: true });
   })
 
-  .post("/settings/ipdb/download", async (c) => c.json({ success: false, error: "IP DB download not supported in cloud mode. Use IPInfo API mode." }))
-
-  .delete("/settings/ipdb", async (c) => { if (_storage) await _storage.del("settings:ipdb"); return c.json({ success: true }); })
+  .delete("/settings/ipdb", async (c) => { await clearIpdbSettings(); return c.json({ success: true }); })
 
   .get("/about", async (c) => c.json({ version: "3.1.5", mode: _cfg.DEMO_MODE === "true" ? "demo" : "production", runtime: _platform === "cloudflare-workers" ? "workerd" : "node", platform: _platform }))
 

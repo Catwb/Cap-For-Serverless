@@ -1,17 +1,37 @@
-let _loaded = false;
 let _token = null;
+let _storage = null;
 
-export function initIpdb(storage) {
-  _token = process.env.IPINFO_TOKEN;
-  if (!_token) {
-    _loaded = false;
-    return;
-  }
-  _loaded = true;
+export function initIpdb(storage, cfg) {
+  _storage = storage;
+  _token = cfg.IPINFO_TOKEN || null;
+}
+
+export async function loadSettings() {
+  if (!_storage) return;
+  try {
+    const raw = await _storage.get("settings:ipinfo_token");
+    if (raw) _token = raw;
+  } catch {}
 }
 
 export function isLoaded() {
-  return _loaded && !!_token;
+  return !!_token;
+}
+
+export function getStatus() {
+  return { mode: _token ? "ipinfo" : null, loaded: !!_token, ipinfoToken: !!_token };
+}
+
+export async function saveSettings(body) {
+  if (body.ipinfoToken) {
+    _token = body.ipinfoToken;
+    if (_storage) await _storage.set("settings:ipinfo_token", body.ipinfoToken);
+  }
+}
+
+export async function clearSettings() {
+  _token = null;
+  if (_storage) await _storage.del("settings:ipinfo_token");
 }
 
 export async function lookup(ip) {

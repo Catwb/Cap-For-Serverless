@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { Hono } from "hono";
 import {
   generateChallenge as coreGenerateChallenge,
@@ -7,6 +6,8 @@ import {
 import { createRateLimiter } from "./ratelimit.js";
 import { ensureRswKeypair, getRswKeypair } from "./rsw-store.js";
 import { getFiltering, getHeaders, getRatelimit } from "./settings-cache.js";
+import { lookup as ipLookup, isLoaded as ipLoaded } from "./ipdb.js";
+import { randomHex } from "./crypto.js";
 
 let _storage = null;
 
@@ -44,7 +45,7 @@ const DEFAULT_IP_HEADERS = ["X-Forwarded-For", "X-Real-IP", "CF-Connecting-IP"];
 
 function getClientIp(request) {
   const cachedHeaders = getHeaders();
-  const headerName = cachedHeaders?.ipHeader || process.env.RATELIMIT_IP_HEADER;
+  const headerName = cachedHeaders?.ipHeader;
   if (headerName) {
     const ip = request.headers.get(headerName) || request.headers.get(headerName.toLowerCase());
     if (ip) { const p = ip.split(",").filter(Boolean); return p[0].trim(); }
@@ -158,6 +159,11 @@ capRouter.post("/:siteKey/challenge", async (c) => {
     const cachedHeaders = getHeaders();
     let country = cachedHeaders?.countryHeader ? (c.req.header(cachedHeaders.countryHeader) || c.req.header(cachedHeaders.countryHeader.toLowerCase())) : null;
     let asnValue = cachedHeaders?.asnHeader ? (c.req.header(cachedHeaders.asnHeader) || c.req.header(cachedHeaders.asnHeader.toLowerCase())) : null;
+    if ((!country || !asnValue) && ipLoaded()) {
+      const geo = await ipLookup(ip);
+      if (!country && geo.country) country = geo.country;
+      if (!asnValue && geo.asn) asnValue = geo.asn;
+    }
     if (country) fnf(_storage.hincrby(`metrics:country:${siteKey}`, country.toUpperCase(), 1));
     if (asnValue) fnf(_storage.hincrby(`metrics:asn:${siteKey}`, asnValue, 1));
   })().catch(() => {});
@@ -233,8 +239,8 @@ capRouter.post("/:siteKey/redeem", async (c) => {
       return claim;
     },
     signToken: () => {
-      const redeemId = crypto.randomBytes(8).toString("hex");
-      const redeemSecret = crypto.randomBytes(15).toString("hex");
+      const redeemId = randomHex(8);
+      const redeemSecret = randomHex(15);
       return `${siteKey}:${redeemId}:${redeemSecret}`;
     },
     tokenTtlMs: TOKEN_TTL_MS,

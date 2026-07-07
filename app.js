@@ -10,6 +10,7 @@ import { initCap, capRouter } from "./src/cap.js";
 import { initSiteverify, siteverifyRouter } from "./src/siteverify.js";
 import { initAssets, assetsRouter } from "./src/assets.js";
 import { initServer, serverRouter } from "./src/server.js";
+import { initIpdb as initIpdbLib, loadSettings as loadIpdbSettings } from "./src/ipdb.js";
 
 let storage;
 
@@ -46,6 +47,7 @@ export async function createApp(env) {
   initSiteverify(storage);
   initAssets(storage);
   initServer(storage, cfg, platform);
+  initIpdbLib(storage, cfg);
 
   await Promise.all([
     loadHeaders().catch(() => {}),
@@ -53,6 +55,7 @@ export async function createApp(env) {
     loadCorsDefault().catch(() => {}),
     loadFiltering().catch(() => {}),
     loadRswKeypair().catch(() => {}),
+    loadIpdbSettings().catch(() => {}),
   ]);
 
   const app = new Hono();

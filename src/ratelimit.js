@@ -7,7 +7,7 @@ const DEFAULT_IP_HEADERS = ["X-Forwarded-For", "X-Real-IP", "CF-Connecting-IP"];
 function getClientIp(request) {
   const cachedHeaders = getHeaders();
   const headerFromSettings = cachedHeaders?.ipHeader;
-  const headerName = headerFromSettings || process.env.RATELIMIT_IP_HEADER;
+  const headerName = headerFromSettings;
 
   if (headerName) {
     const ip = request.headers.get(headerName) || request.headers.get(headerName.toLowerCase());
