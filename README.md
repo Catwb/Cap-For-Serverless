@@ -112,15 +112,11 @@ git add cloud/ && git commit -m "add cloud" && git push
 | `WIDGET_VERSION` | `latest` |
 | `WASM_VERSION` | `latest` |
 
-### 5. 开启 nodejs_compat
+### 5. 部署
 
-在 Pages 项目 → **Settings → Functions → Compatibility flags**，添加 `nodejs_compat`。
+回到 **Deployments** 标签，点 **Retry deployment** 或重新推送代码。Pages 会自动读取 `wrangler.toml` 中的 `nodejs_compat` 标志。
 
-> ⚠️ 不配这个标志会报 `Error 1101`，因为 `atob`、`crypto.subtle` 等 API 需要它。
-
-### 6. 部署
-
-回到 **Deployments** 标签，点 **Retry deployment** 或重新推送代码。之后每次 `git push` 自动构建部署。
+之后每次 `git push` 自动构建部署。
 
 验证：
 

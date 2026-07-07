@@ -1,3 +1,4 @@
-# Cloudflare Pages local dev
-# Usage: npx wrangler pages dev public/ --compatibility-flags nodejs_compat
+# Cloudflare Pages
+# Pages 构建时会自动读取这个文件
 compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
